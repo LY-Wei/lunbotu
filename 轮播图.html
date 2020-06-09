@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title></title>
+        <style>
+            img {
+                transition: width 1s, height 1s;
+            }
+            .slide {
+                position: relative;
+                width: 600px;
+            }
+            .slide-image {
+                display: none;
+            }
+            /*slide-image*/
+            .active {
+                display: inline-block;
+            }
+            #id-image-0 {
+                width: 600px;
+                height: 400px;
+            }
+            #id-image-1 {
+                width: 600px;
+                height: 400px;
+            }
+            #id-image-2 {
+                width: 600px;
+                height: 400px;
+            }
+            .slide-button {
+                width: 30px;
+                height: 50px;
+                color: #fff;
+                background: black;
+                opacity: 0.3;
+                outline: 0;
+                border: 0;
+                cursor: pointer
+            }
+            .left {
+                left: 0;
+            }
+            .right {
+                right: 0;
+            }
+            .vertical-center {
+                position: absolute;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            .slide-dots {
+                position: absolute;
+                bottom: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                cursor: pointer;
+            }
+            .slide-dot {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background: red;
+            }
+            .white {
+                background: white;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- 轮播图 -->
+        <div class="slide-3">
+            <!-- data-imgs 是图片的总数 -->
+            <!-- data-active 是当前显示的图片的下标 -->
+            <!--data-autoid 是定时器的 id-->
+            <div class="slide" data-imgs="3" data-active="0" data-autoid="">
+                <img id="id-image-0" class="slide-image active" src="1.jpg" alt="">
+                <img id="id-image-1" class="slide-image" src="2.jpg" alt="">
+                <img id="id-image-2" class="slide-image" src="3.jpg" alt="">
+                <button class="slide-button left vertical-center"
+                    data-offset="-1">&lt;</button>
+                <button class="slide-button right vertical-center"
+                    data-offset="1">&gt;</button>
+                <div class="slide-dots">
+                    <div id="id-dot-0" class="slide-dot white"
+                         data-index="0"></div>
+                    <div id="id-dot-1" class="slide-dot"
+                         data-index="1"></div>
+                    <div id="id-dot-2" class="slide-dot"
+                         data-index="2"></div>
+                </div>
+            </div>
+        </div>
+        <script>
+            // ly库函数
+            const log = console.log.bind(console)
+
+            const e = function(selector) {
+                let element = document.querySelector(selector)
+                if (element === null) {
+                    let s = `选择器 ${selector} 写错了, 请仔细检查并且复习三种基本的选择器`
+                    alert(s)
+                    return null
+                } else {
+                    return element
+                }
+            }
+
+            const es = function(selector) {
+                let elements = document.querySelectorAll(selector)
+                if (elements.length === 0) {
+                    let s = `选择器 ${selector} 写错了, 请仔细检查并且复习三种基本的选择器`
+                    alert(s)
+                    return []
+                } else {
+                    return elements
+                }
+            }
+            const bindEvent = function(element, eventName, callback) {
+                element.addEventListener(eventName, callback)
+            }
+
+            const removeClassAll = function(className) {
+                let selector = '.' + className
+                let elements = es(selector)
+                for (let i = 0; i < elements.length; i++) {
+                    let e = elements[i]
+                    e.classList.remove(className)
+                }
+            }
+
+            const bindAll = function(selector, eventName, callback) {
+                let elements = es(selector)
+                for (let i = 0; i < elements.length; i++) {
+                    let e = elements[i]
+                    bindEvent(e, eventName, callback)
+                }
+            }
+
+            // 切换图片
+            const nextIndex = (slide, offset) => {
+                // 得到图片总数和当前图片下标
+                let numberOfImgs = parseInt(slide.dataset.imgs, 10)
+                let activeIndex = Number(slide.dataset.active)
+                let i = (activeIndex + offset + numberOfImgs) % numberOfImgs
+                return i
+            }
+
+            const bindEventSlide = () => {
+                let selector = '.slide-button'
+                bindAll(selector, 'click', function(event) {
+                    let button = event.target
+                    // 找到 slide div
+                    let slide = button.parentElement
+                    let offset = Number(button.dataset.offset)
+                    // 求出下一张图片的 index
+                    let index = nextIndex(slide, offset)
+                    // 显示下一张图片
+                    showImageAtIndex(slide, index)
+                })
+            }
+
+            const bindEventDot = () => {
+                let selector = '.slide-dot'
+                bindAll(selector, 'mouseover', function(event) {
+                    let self = event.target
+                    console.log('mouseover dots')
+                    let index = Number(self.dataset.index)
+                    // 直接播放第 n 张图片
+                    let slide = self.closest('.slide')
+                    showImageAtIndex(slide, index)
+                })
+            }
+
+            const showImageAtIndex = (slide, index) => {
+                let nextIndex = index
+                // 设置父节点的 data-active
+                slide.dataset.active = String(nextIndex)
+                // 删除当前图片的 class 给下一张图片加上 class
+                let className = 'active'
+                removeClassAll(className)
+
+                let nextSelector = '#id-image-' + String(nextIndex)
+                let img = e(nextSelector)
+                img.classList.add(className)
+
+                // 切换小圆点
+                removeClassAll('white')
+                let dotSelector = '#id-dot-' + String(nextIndex)
+                let dot = e(dotSelector)
+                dot.classList.add('white')
+            }
+
+            // 自动播放|暂停
+            const playNextImg = () => {
+                let slide = e('.slide')
+                let index = nextIndex(slide, 1)
+                showImageAtIndex(slide, index)
+            }
+
+            const autoPlay = () => {
+                let slide = e('.slide')
+                let interval = 2000
+                let autoid = setInterval(function () {
+                    // log('autoid', autoid)
+                    playNextImg()
+                }, interval)
+                slide.dataset.autoid = String(autoid)
+            }
+
+            const clearAutoPlay = () => {
+                let slide = e('.slide')
+                let clearid = parseInt(slide.dataset.autoid, 10)
+                clearInterval(clearid)
+            }
+
+            const bindEventStop = () => {
+                // 按钮区域
+                let slides = '.slide-button'
+                bindAll(slides, 'mouseover', function () {
+                    log('mouseover slide stop')
+                    clearAutoPlay()
+                })
+                bindAll(slides, 'mouseout', function () {
+                    log('mouseout slide start')
+                    autoPlay()
+                })
+
+                // 圆点区域
+                let dots = '.slide-dots'
+                bindAll(dots, 'mouseover', function () {
+                    clearAutoPlay()
+                })
+                bindAll(dots, 'mouseout', function () {
+                    autoPlay()
+                })
+            }
+
+            // 函数入口
+            const bindEvents = () => {
+                bindEventSlide()
+                bindEventDot()
+                bindEventStop()
+            }
+
+            const __main = () => {
+                bindEvents()
+                autoPlay()
+            }
+
+            __main()
+        </script>
+    </body>
+</html>
